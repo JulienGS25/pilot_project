@@ -1,0 +1,110 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Update apt-get repo and cache
+      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+
+- hosts: monitor
+  become: true
+  tasks:
+    - name: Create target directory for Prometheus to go into
+      file:
+        path: /home/vagrant/prometheus
+        state: directory
+        mode: '0755'
+
+    - name: Download Prometheus
+      get_url:
+        url: "https://github.com/prometheus/prometheus/releases/download/v2.26.0/prometheus-2.26.0.linux-amd64.tar.gz"
+        dest: /home/vagrant/prometheus/prometheus.tar.gz
+        mode: '0777'
+        force: no
+
+    - name: Unzip the archive file
+      unarchive:
+        src: /home/vagrant/prometheus/prometheus.tar.gz
+        dest: /home/vagrant/prometheus
+        remote_src: 'yes'
+
+    - name: Create service account for Prometheus
+      user:
+        name: prometheus
+        shell: /bin/false
+        create_home: no
+
+    - name: Create the first directory and set owner to Prometheus user and group
+      file:
+        path: /etc/prometheus
+        state: directory
+        owner: prometheus
+        group: prometheus
+        mode: '0777'
+
+    - name: Create the second directory and set owner to Prometheus user and group
+      file:
+        path: /var/lib/prometheus
+        state: directory
+        owner: prometheus
+        group: prometheus
+        mode: '0777'
+
+    - name: Copy prometheus from prometheus files to /usr/local/bin and set ownership
+      copy:
+        src: /home/vagrant/prometheus/prometheus-2.26.0.linux-amd64/prometheus
+        dest: /usr/local/bin
+        group: prometheus
+        owner: prometheus
+        mode: '0777'
+        remote_src: yes
+
+    - name: Copy promtool binary from prometheus files to /usr/local/bin and set ownership
+      copy:
+        src: /home/vagrant/prometheus/prometheus-2.26.0.linux-amd64/promtool
+        dest: /usr/local/bin
+        group: prometheus
+        owner: prometheus
+        mode: '0777'
+        remote_src: yes
+
+    - name: Copy consoles from prometheus files to /etc/prometheus and set ownership
+      copy:
+        src: /home/vagrant/prometheus/prometheus-2.26.0.linux-amd64/consoles
+        dest: /etc/prometheus
+        group: prometheus
+        owner: prometheus
+        mode: '0777'
+        remote_src: yes
+
+    - name: Copy console_libraries from prometheus files to /etc/prometheus and set ownership
+      copy:
+        src: /home/vagrant/prometheus/prometheus-2.26.0.linux-amd64/console_libraries
+        dest: /etc/prometheus
+        group: prometheus
+        owner: prometheus
+        mode: '0777'
+        remote_src: yes
+
+    - name: Copy prometheus.yml file to remote
+      copy:
+        src: /home/julien/VM/pilot/prometheus_files/prometheus.yml
+        dest: /etc/prometheus/prometheus.yml
+        owner: prometheus
+        group: prometheus
+        mode: '0777'
+
+    - name: Copy prometheus.service file to remote
+      copy:
+        src: /home/julien/VM/pilot/prometheus_files/prometheus.service
+        dest: /etc/systemd/system/prometheus.service
+        owner: prometheus
+        group: prometheus
+        mode: '0777'
+
+    - name: Reload the daemon, start and enable Prometheus service
+      systemd:
+        name: prometheus.service
+        daemon_reload: yes
+        state: started
+        enabled: yes
+
