@@ -1,0 +1,43 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Update apt-get repo and cache
+      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+
+- hosts: monitor
+  become: true
+  tasks:
+    - name: Create target directory for Grafana to go into
+      file:
+        path: /home/vagrant/grafana
+        state: directory
+        mode: '0755'
+
+    - name: Install requirements for Grafana
+      apt:
+        pkg:
+          - apt-transport-https
+          - software-properties-common
+
+    - name: Add APT Key
+      apt_key:
+        url: https://packages.grafana.com/gpg.key
+        state: present
+
+    - name: Add repository for stable release
+      apt_repository:
+        repo: deb https://packages.grafana.com/enterprise/deb stable main
+
+    - name: Install Grafana
+      apt: 
+        name: grafana-enterprise
+        state: latest
+        update_cache: yes
+
+    - name: Reload the daemon, start and enable Grafana service
+      systemd:
+        name: grafana-server
+        daemon_reload: yes
+        state: started
+        enabled: yes
