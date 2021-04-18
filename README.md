@@ -14,7 +14,7 @@ Todo:
   - monitoring server
 
 - Automate Prometheus deployment with Ansible (done)
-- Automate Grafana deployment with Ansible
+- Automate Grafana deployment with Ansible (done)
 - Automate node_exporter deployment with Ansible
 - Build basic todo list web app with DB integration
 - Deploy Kubernetes cluster with 3 pods, 1 master and DB server outside of the cluster
